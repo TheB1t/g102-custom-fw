@@ -10,7 +10,7 @@ namespace services {
 namespace {
 
 constexpr uint8_t  HID_EP_IN       = 0x81;
-constexpr uint16_t HID_REPORT_SIZE = 4;
+constexpr uint16_t HID_REPORT_SIZE = 6;  // buttons + int16 dx + int16 dy + int8 wheel
 
 const struct usb_device_descriptor dev_desc = {
     .bLength            = USB_DT_DEVICE_SIZE,
@@ -29,16 +29,32 @@ const struct usb_device_descriptor dev_desc = {
     .bNumConfigurations = 1,
 };
 
-/* Mouse report descriptor — 5 buttons, X/Y (int8), wheel (int8).
-   Still boot-protocol compatible: OS that asks for the boot report sees
-   only the low 3 bits; the extra 2 are standard report-mode buttons. */
+/* Mouse report descriptor — 5 buttons, X/Y (int16), wheel (int8). */
 const uint8_t hid_report_descriptor[] = {
-    0x05, 0x01, 0x09, 0x02, 0xA1, 0x01, 0x09, 0x01, 0xA1, 0x00,
-    0x05, 0x09, 0x19, 0x01, 0x29, 0x05, 0x15, 0x00, 0x25, 0x01,
-    0x95, 0x05, 0x75, 0x01, 0x81, 0x02, 0x95, 0x01, 0x75, 0x03,
-    0x81, 0x01, 0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 0x15, 0x81,
-    0x25, 0x7F, 0x75, 0x08, 0x95, 0x02, 0x81, 0x06, 0x09, 0x38,
-    0x95, 0x01, 0x81, 0x06, 0xC0, 0xC0,
+    0x05, 0x01,                    // Usage Page (Generic Desktop)
+    0x09, 0x02,                    // Usage (Mouse)
+    0xA1, 0x01,                    // Collection (Application)
+    0x09, 0x01,                    //   Usage (Pointer)
+    0xA1, 0x00,                    //   Collection (Physical)
+    0x05, 0x09,                    //     Usage Page (Button)
+    0x19, 0x01, 0x29, 0x05,        //     Usage Min 1, Usage Max 5
+    0x15, 0x00, 0x25, 0x01,        //     Logical Min 0, Max 1
+    0x95, 0x05, 0x75, 0x01,        //     Report Count 5, Size 1
+    0x81, 0x02,                    //     Input (Data,Var,Abs)
+    0x95, 0x01, 0x75, 0x03,        //     Report Count 1, Size 3
+    0x81, 0x01,                    //     Input (Const) — 3-bit padding
+    0x05, 0x01,                    //     Usage Page (Generic Desktop)
+    0x09, 0x30, 0x09, 0x31,        //     Usage X, Usage Y
+    0x16, 0x01, 0x80,              //     Logical Min -32767
+    0x26, 0xFF, 0x7F,              //     Logical Max +32767
+    0x75, 0x10, 0x95, 0x02,        //     Report Size 16, Count 2
+    0x81, 0x06,                    //     Input (Data,Var,Rel)
+    0x09, 0x38,                    //     Usage (Wheel)
+    0x15, 0x81, 0x25, 0x7F,        //     Logical Min -127, Max +127
+    0x75, 0x08, 0x95, 0x01,        //     Report Size 8, Count 1
+    0x81, 0x06,                    //     Input (Data,Var,Rel)
+    0xC0,                          //   End Collection (Physical)
+    0xC0,                          // End Collection (Application)
 };
 
 const struct {
@@ -77,8 +93,8 @@ const struct usb_interface_descriptor iface = {
     0,                      // bAlternateSetting
     1,                      // bNumEndpoints
     USB_CLASS_HID,          // bInterfaceClass
-    1,                      // bInterfaceSubClass (boot)
-    2,                      // bInterfaceProtocol (mouse)
+    0,                      // bInterfaceSubClass (no boot — we use int16 X/Y)
+    0,                      // bInterfaceProtocol (none)
     0,                      // iInterface
     &hid_ep,                // endpoint
     &hid_function,          // extra
@@ -159,15 +175,20 @@ void UsbHidMouse::poll()
     usbd_poll(usbd_);
 }
 
-void UsbHidMouse::send_report(uint8_t buttons, int8_t dx, int8_t dy, int8_t wheel)
+void UsbHidMouse::send_report(uint8_t buttons, int16_t dx, int16_t dy, int8_t wheel)
 {
     if (!configured_) return;
 
+    uint16_t udx = static_cast<uint16_t>(dx);
+    uint16_t udy = static_cast<uint16_t>(dy);
+
     uint8_t report[HID_REPORT_SIZE];
     report[0] = buttons & 0x1F;
-    report[1] = static_cast<uint8_t>(dx);
-    report[2] = static_cast<uint8_t>(dy);
-    report[3] = static_cast<uint8_t>(wheel);
+    report[1] = static_cast<uint8_t>(udx & 0xFF);
+    report[2] = static_cast<uint8_t>(udx >> 8);
+    report[3] = static_cast<uint8_t>(udy & 0xFF);
+    report[4] = static_cast<uint8_t>(udy >> 8);
+    report[5] = static_cast<uint8_t>(wheel);
     usbd_ep_write_packet(usbd_, HID_EP_IN, report, sizeof(report));
 }
 

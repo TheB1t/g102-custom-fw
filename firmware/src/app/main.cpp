@@ -100,12 +100,12 @@ int main()
         uint8_t buttons = drivers::Buttons<Board>::hid_bitmap();
         int8_t  wheel   = encoder.consume_ticks();
 
-        int8_t sx = 0, sy = 0;
+        int16_t sx = 0, sy = 0;
         if (sensor.ready()) sensor.read_motion(sx, sy);
         /* Sensor chip is rotated 90° on the G102 PCB: its X is mouse
            forward/back, its Y is left/right. Remap to HID frame. */
-        int8_t dx = sy;
-        int8_t dy = -sx;
+        int16_t dx = sy;
+        int16_t dy = static_cast<int16_t>(-sx);
 
         if (buttons != last_buttons || wheel != 0 || dx != 0 || dy != 0) {
             usb.send_report(buttons, dx, dy, wheel);

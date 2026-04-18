@@ -1,9 +1,11 @@
 #pragma once
 
 /*
- * USB HID boot-mouse service. Enumerates as stock Logitech G102
- * (046d:c092) so the OS applies its usual defaults. 4-byte boot-protocol
- * report: buttons bitmap, dx, dy, wheel.
+ * USB HID mouse service. Enumerates as stock Logitech G102 (046d:c092)
+ * so the OS applies its usual defaults. Report is 6 bytes:
+ *   [buttons:1 (5 bits used)] [dx:int16_le] [dy:int16_le] [wheel:int8]
+ * Non-boot interface — OS reads the report descriptor and handles the
+ * 16-bit X/Y natively, so fast swipes don't clip at ±127.
  *
  * Singleton in practice — libopencm3's usbd callbacks aren't instance-aware,
  * so the class routes them through a file-static pointer. Construct once.
@@ -20,7 +22,7 @@ public:
     void poll();
 
     /* No-op until the host has SET_CONFIGURATION'd us. */
-    void send_report(uint8_t buttons, int8_t dx, int8_t dy, int8_t wheel);
+    void send_report(uint8_t buttons, int16_t dx, int16_t dy, int8_t wheel);
 
     bool configured() const { return configured_; }
 
