@@ -4,7 +4,8 @@
  * Gray-code quadrature decoder for a 2-channel mechanical scroll encoder.
  *
  * One physical detent = 4 edges (×4 decode). The accumulator runs at every
- * state transition, and we emit a HID wheel tick every 4 counts.
+ * state transition, and we emit a HID wheel tick every 2 counts — i.e.
+ * two ticks per detent, to match the stock firmware's feel.
  *
  * Call init() once, poll() from the main loop (≈1 kHz), and
  * consume_ticks() when you assemble a HID report.
@@ -48,8 +49,11 @@ public:
         last_ = now;
 
         accum_ = static_cast<int8_t>(accum_ + d);
-        if (accum_ >= +4) { emit(+1); accum_ = 0; }
-        if (accum_ <= -4) { emit(-1); accum_ = 0; }
+        /* Use subtractive thresholding so a reversal mid-half-detent
+           doesn't get swallowed — the remainder carries into the next
+           transition instead of resetting to zero. */
+        while (accum_ >= +2) { emit(+1); accum_ = static_cast<int8_t>(accum_ - 2); }
+        while (accum_ <= -2) { emit(-1); accum_ = static_cast<int8_t>(accum_ + 2); }
     }
 
     /* Returns accumulated ticks since last call and clears the counter. */
