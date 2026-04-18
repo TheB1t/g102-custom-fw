@@ -12,10 +12,13 @@
 
 namespace drivers {
 
-/* HID boot-protocol button bits — matches the report descriptor layout. */
-constexpr uint8_t BTN_LEFT   = 1u << 0;
-constexpr uint8_t BTN_RIGHT  = 1u << 1;
-constexpr uint8_t BTN_MIDDLE = 1u << 2;
+/* HID button bits — must match the report descriptor (5 usable buttons).
+   Bits 3/4 are the standard "thumb back / thumb forward" on Logitech mice. */
+constexpr uint8_t BTN_LEFT    = 1u << 0;
+constexpr uint8_t BTN_RIGHT   = 1u << 1;
+constexpr uint8_t BTN_MIDDLE  = 1u << 2;
+constexpr uint8_t BTN_BACK    = 1u << 3;   // thumb rear  — BTN_SIDE  in evdev
+constexpr uint8_t BTN_FORWARD = 1u << 4;   // thumb front — BTN_EXTRA in evdev
 
 template <typename Board>
 class Buttons {
@@ -32,13 +35,15 @@ public:
         Board::BtnMacro2::setup_input_pullup();
     }
 
-    /* HID-bitmap read for LMB/RMB/Middle. Active-low → inverted. */
+    /* HID-bitmap read for all 5 reported buttons. Active-low → inverted. */
     static uint8_t hid_bitmap()
     {
         uint8_t b = 0;
         if (!Board::BtnLmb::read())    b |= BTN_LEFT;
         if (!Board::BtnRmb::read())    b |= BTN_RIGHT;
         if (!Board::BtnScroll::read()) b |= BTN_MIDDLE;
+        if (!Board::BtnMacro1::read()) b |= BTN_BACK;
+        if (!Board::BtnMacro2::read()) b |= BTN_FORWARD;
         return b;
     }
 

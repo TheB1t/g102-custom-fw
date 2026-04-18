@@ -21,7 +21,7 @@ const struct usb_device_descriptor dev_desc = {
     .bDeviceProtocol    = 0,
     .bMaxPacketSize0    = 64,
     .idVendor           = 0x046d,
-    .idProduct          = 0xbeef,
+    .idProduct          = 0xc092,
     .bcdDevice          = 0x0100,
     .iManufacturer      = 1,
     .iProduct           = 2,
@@ -29,11 +29,13 @@ const struct usb_device_descriptor dev_desc = {
     .bNumConfigurations = 1,
 };
 
-/* Boot-protocol mouse report descriptor — 3 buttons, X/Y (int8), wheel. */
+/* Mouse report descriptor — 5 buttons, X/Y (int8), wheel (int8).
+   Still boot-protocol compatible: OS that asks for the boot report sees
+   only the low 3 bits; the extra 2 are standard report-mode buttons. */
 const uint8_t hid_report_descriptor[] = {
     0x05, 0x01, 0x09, 0x02, 0xA1, 0x01, 0x09, 0x01, 0xA1, 0x00,
-    0x05, 0x09, 0x19, 0x01, 0x29, 0x03, 0x15, 0x00, 0x25, 0x01,
-    0x95, 0x03, 0x75, 0x01, 0x81, 0x02, 0x95, 0x01, 0x75, 0x05,
+    0x05, 0x09, 0x19, 0x01, 0x29, 0x05, 0x15, 0x00, 0x25, 0x01,
+    0x95, 0x05, 0x75, 0x01, 0x81, 0x02, 0x95, 0x01, 0x75, 0x03,
     0x81, 0x01, 0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 0x15, 0x81,
     0x25, 0x7F, 0x75, 0x08, 0x95, 0x02, 0x81, 0x06, 0x09, 0x38,
     0x95, 0x01, 0x81, 0x06, 0xC0, 0xC0,
@@ -97,8 +99,8 @@ const struct usb_config_descriptor cfg_desc = {
     .bNumInterfaces      = 1,
     .bConfigurationValue = 1,
     .iConfiguration      = 0,
-    .bmAttributes        = 0xA0,
-    .bMaxPower           = 50,
+    .bmAttributes        = 0xA0,   // bus-powered, remote-wakeup capable
+    .bMaxPower           = 50,     // 100 mA
     .interface           = ifaces,
 };
 
@@ -162,7 +164,7 @@ void UsbHidMouse::send_report(uint8_t buttons, int8_t dx, int8_t dy, int8_t whee
     if (!configured_) return;
 
     uint8_t report[HID_REPORT_SIZE];
-    report[0] = buttons & 0x07;
+    report[0] = buttons & 0x1F;
     report[1] = static_cast<uint8_t>(dx);
     report[2] = static_cast<uint8_t>(dy);
     report[3] = static_cast<uint8_t>(wheel);
