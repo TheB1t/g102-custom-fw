@@ -1,0 +1,752 @@
+; "1855" sensor SPI disassembly (PixArt-family protocol)
+; source: digital.csv
+; segmentation: CS-framed
+; total transactions: 8785
+; size histogram (top 10): [(5, 8764), (2, 10), (2103, 2), (1580, 2), (14, 2), (34, 2), (83, 1), (81, 1), (4, 1)]
+
+tx[    0] (generic)
+@ 3.034920s  WR  02 (Config_02?) = 08
+
+tx[    1] (generic)
+@ 3.441770s  WR  0A (Rev_ID?) = 48
+
+tx[    2] (init)
+=== INIT transaction @ 3.441856s  size=2103 bytes ===
+--- Phase A: Preamble [0..11] ---
+; SROM loader preamble (standard)
+    WR  2A (SROM_Cmd       ) = CF
+    WR  2B (SROM_Mode      ) = 06
+    WR  2C (SROM_Ctrl      ) = 0A
+    WR  2D (SROM_Addr      ) = 00
+    WR  2E (SROM_Data_L    ) = 62
+    WR  2F (SROM_Data_H    ) = 80
+--- Phase B: SROM upload [12..2051] — 2040 bus bytes = 1020 SROM bytes ---
+    pattern: 510× (WR SROM_Data_L, WR SROM_Data_H)
+    SROM first 16: 6a013350f8036020336139b0f800809a
+    SROM last  16: e0f0e0f0e0f0e0f0e0f0e0f0e0f00302
+; no AE/AF/80 triplet found after SROM upload
+
+tx[    3] (init)
+=== INIT transaction @ 3.447436s  size=1580 bytes ===
+--- Phase A: Preamble [0..11] ---
+; preamble (non-standard): 2acf2b022c0a2d00aeaf80ae
+--- Phase B: SROM upload [12..11] — 0 bus bytes = 0 SROM bytes ---
+    pattern: 0× (WR SROM_Data_L, WR SROM_Data_H)
+    SROM first 16: 
+    SROM last  16: 
+--- Phase C: Config between upload & readback [12..13] — 2 bytes ---
+    @+000C  RD  2F (SROM_Data_H    ) -> next MISO=01
+    @+000D  LOADER_MARK  80
+--- Phase D: SROM readback [14..1540] — 509× (RD SROM_Data_L, RD SROM_Data_H, filler 80) ---
+    readback first 16 (MISO): 3350f8036020336139b0f800809a6261
+    readback last  16 (MISO): e0f0e0f0e0f0e0f0e0f0e0f0e0f00302
+--- Phase E: Post-readback config [1541..1579] — 39 bytes ---
+    @+0605  WR  2C (SROM_Ctrl      ) = 0D
+    @+0607  WR  2D (SROM_Addr      ) = E4
+    @+0609  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=0A hi=00
+    @+060C  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=00 hi=00
+    @+060F  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=00 hi=00
+    @+0612  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=0A hi=E6
+    @+0615  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=0A hi=13
+    @+0618  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=00 hi=00
+    @+061B  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=00 hi=00
+    @+061E  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=00 hi=00
+    @+0621  WR  2B (SROM_Mode      ) = 01
+    @+0623  WR  2C (SROM_Ctrl      ) = 00
+    @+0625  WR  2D (SROM_Addr      ) = F0
+    @+0627  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=0A hi=00
+    @+062A  WR  2A (SROM_Cmd       ) = 00
+
+tx[    4] (generic)
+@ 3.451551s  WR-burst len=83  MOSI=7692408043014300cacb80408143014300cacb80408243014300cacb80408343014300cacb80408443014300cacb80408543014300cacb80408643014300cacb80408743014300cacb80408843014300cacb80  MISO=100010008000010100d7d792808100010100ffff92818200010100005a928283000101001640928384000101000a0a92848500010100120b928586000101008800928687000101002e3f928788000101003bcc
+
+tx[    5] (generic)
+@ 3.451769s  WR  76 (Unlock?) = 00
+
+tx[    6] (generic)
+@ 3.451775s  WR-burst len=14  MOSI=30163140320a330a3412350b3688  MISO=1018164040080a080a10120b0b88
+
+tx[    7] (generic)
+@ 3.451811s  WR  09 (Config_09?) = 60
+
+tx[    8] (generic)
+@ 3.451816s  WR-burst len=34  MOSI=0b400c060d060e11201f21fa22c82397241f250d26f2277628a029803d101f206109  MISO=100040060606061011321ffafac8c8fa97001f000d00f2007600a000800010002008
+
+tx[    9] (generic)
+@ 3.451907s  WR  02 (Config_02?) = 80
+
+tx[   10] (generic)
+@ 3.617834s  WR  0A (Rev_ID?) = 48
+
+tx[   11] (init)
+=== INIT transaction @ 3.617963s  size=2103 bytes ===
+--- Phase A: Preamble [0..11] ---
+; SROM loader preamble (standard)
+    WR  2A (SROM_Cmd       ) = CF
+    WR  2B (SROM_Mode      ) = 06
+    WR  2C (SROM_Ctrl      ) = 0A
+    WR  2D (SROM_Addr      ) = 00
+    WR  2E (SROM_Data_L    ) = 62
+    WR  2F (SROM_Data_H    ) = 80
+--- Phase B: SROM upload [12..2051] — 2040 bus bytes = 1020 SROM bytes ---
+    pattern: 510× (WR SROM_Data_L, WR SROM_Data_H)
+    SROM first 16: 6a013350f8036020336139b0f800809a
+    SROM last  16: e0f0e0f0e0f0e0f0e0f0e0f0e0f00302
+; no AE/AF/80 triplet found after SROM upload
+
+tx[   12] (init)
+=== INIT transaction @ 3.623697s  size=1580 bytes ===
+--- Phase A: Preamble [0..11] ---
+; preamble (non-standard): 2acf2b022c0a2d00aeaf80ae
+--- Phase B: SROM upload [12..11] — 0 bus bytes = 0 SROM bytes ---
+    pattern: 0× (WR SROM_Data_L, WR SROM_Data_H)
+    SROM first 16: 
+    SROM last  16: 
+--- Phase C: Config between upload & readback [12..13] — 2 bytes ---
+    @+000C  RD  2F (SROM_Data_H    ) -> next MISO=01
+    @+000D  LOADER_MARK  80
+--- Phase D: SROM readback [14..1540] — 509× (RD SROM_Data_L, RD SROM_Data_H, filler 80) ---
+    readback first 16 (MISO): 3350f8036020336139b0f800809a6261
+    readback last  16 (MISO): e0f0e0f0e0f0e0f0e0f0e0f0e0f00302
+--- Phase E: Post-readback config [1541..1579] — 39 bytes ---
+    @+0605  WR  2C (SROM_Ctrl      ) = 0D
+    @+0607  WR  2D (SROM_Addr      ) = E4
+    @+0609  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=0A hi=00
+    @+060C  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=00 hi=00
+    @+060F  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=00 hi=00
+    @+0612  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=0A hi=E6
+    @+0615  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=0A hi=13
+    @+0618  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=00 hi=00
+    @+061B  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=00 hi=00
+    @+061E  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=00 hi=00
+    @+0621  WR  2B (SROM_Mode      ) = 01
+    @+0623  WR  2C (SROM_Ctrl      ) = 00
+    @+0625  WR  2D (SROM_Addr      ) = F0
+    @+0627  RD_WORD  SROM_Data_L,SROM_Data_H -> MISO lo=0A hi=00
+    @+062A  WR  2A (SROM_Cmd       ) = 00
+
+tx[   13] (generic)
+@ 3.627800s  WR  76 (Unlock?) = 92
+
+tx[   14] (generic)
+@ 3.627805s  WR-burst len=81  MOSI=408043014300cacb80408143014300cacb80408243014300cacb80408343014300cacb80408443014300cacb80408543014300cacb80408643014300cacb80408743014300cacb80408843014300cacb80  MISO=10008000010100d7d792808100010100ffff92818200010100005a928283000101001640928384000101000a0a92848500010100120b928586000101008800928687000101002e3f928788000101003bcc
+
+tx[   15] (generic)
+@ 3.628018s  WR  76 (Unlock?) = 00
+
+tx[   16] (generic)
+@ 3.628023s  WR-burst len=14  MOSI=30163140320a330a3412350b3688  MISO=1018164040080a080a10120b0b88
+
+tx[   17] (generic)
+@ 3.628059s  WR  09 (Config_09?) = 60
+
+tx[   18] (generic)
+@ 3.628065s  WR-burst len=34  MOSI=0b400c060d060e11201f21fa22c82397241f250d26f2277628a029803d101f206109  MISO=100040060606061011321ffafac8c8fa97001f000d00f2007600a000800010002008
+
+tx[   19] (generic)
+@ 3.628159s  WR  02 (Config_02?) = 80
+
+tx[   20] (poll)
+[   ] poll @ 3.628335s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=4192000000)
+
+tx[   21] (generic)
+@ 3.628352s  WR-burst len=4  MOSI=20072407  MISO=401f071f
+
+tx[   22] (poll)
+[   ] poll @ 3.629335s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0192000000)
+
+tx[   23] (poll)
+[   ] poll @ 3.630336s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   24] (poll)
+[   ] poll @ 3.631336s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   25] (poll)
+[   ] poll @ 3.632337s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   26] (poll)
+[   ] poll @ 3.633337s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   27] (poll)
+[   ] poll @ 3.634337s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   28] (poll)
+[   ] poll @ 3.635337s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   29] (poll)
+[   ] poll @ 3.636338s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   30] (poll)
+[   ] poll @ 3.637338s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   31] (poll)
+[   ] poll @ 3.638338s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   32] (poll)
+[   ] poll @ 3.639338s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   33] (poll)
+[   ] poll @ 3.640339s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   34] (poll)
+[   ] poll @ 3.641339s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   35] (poll)
+[   ] poll @ 3.642339s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   36] (poll)
+[   ] poll @ 3.643340s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   37] (poll)
+[   ] poll @ 3.644340s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   38] (poll)
+[   ] poll @ 3.645340s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   39] (poll)
+[   ] poll @ 3.646340s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   40] (poll)
+[   ] poll @ 3.647341s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   41] (poll)
+[   ] poll @ 3.648341s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   42] (poll)
+[   ] poll @ 3.649341s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   43] (poll)
+[   ] poll @ 3.650342s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   44] (poll)
+[   ] poll @ 3.651342s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   45] (poll)
+[   ] poll @ 3.652342s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   46] (poll)
+[   ] poll @ 3.653342s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   47] (poll)
+[   ] poll @ 3.654343s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   48] (poll)
+[   ] poll @ 3.655343s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   49] (poll)
+[   ] poll @ 3.656344s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   50] (poll)
+[   ] poll @ 3.657344s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   51] (poll)
+[   ] poll @ 3.658344s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   52] (poll)
+[   ] poll @ 3.659344s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   53] (poll)
+[   ] poll @ 3.660345s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   54] (poll)
+[   ] poll @ 3.661345s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   55] (poll)
+[   ] poll @ 3.662345s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   56] (poll)
+[   ] poll @ 3.663346s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   57] (poll)
+[   ] poll @ 3.664346s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   58] (poll)
+[   ] poll @ 3.665346s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   59] (poll)
+[   ] poll @ 3.666346s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   60] (poll)
+[   ] poll @ 3.667346s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   61] (poll)
+[   ] poll @ 3.668347s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   62] (poll)
+[   ] poll @ 3.669347s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   63] (poll)
+[   ] poll @ 3.670348s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   64] (poll)
+[   ] poll @ 3.671348s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   65] (poll)
+[   ] poll @ 3.672348s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   66] (poll)
+[   ] poll @ 3.673348s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   67] (poll)
+[   ] poll @ 3.674349s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   68] (poll)
+[   ] poll @ 3.675349s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   69] (poll)
+[   ] poll @ 3.676349s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   70] (poll)
+[   ] poll @ 3.677350s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   71] (poll)
+[   ] poll @ 3.678350s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   72] (poll)
+[   ] poll @ 3.679350s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   73] (poll)
+[   ] poll @ 3.680351s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   74] (poll)
+[   ] poll @ 3.681351s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   75] (poll)
+[   ] poll @ 3.682351s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   76] (poll)
+[   ] poll @ 3.683351s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   77] (poll)
+[   ] poll @ 3.684352s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   78] (poll)
+[   ] poll @ 3.685352s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   79] (poll)
+[   ] poll @ 3.686352s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   80] (poll)
+[   ] poll @ 3.687352s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   81] (poll)
+[   ] poll @ 3.688353s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   82] (poll)
+[   ] poll @ 3.689353s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   83] (poll)
+[   ] poll @ 3.690354s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   84] (poll)
+[   ] poll @ 3.691354s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   85] (poll)
+[   ] poll @ 3.692354s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   86] (poll)
+[   ] poll @ 3.693354s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   87] (poll)
+[   ] poll @ 3.694355s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   88] (poll)
+[   ] poll @ 3.695355s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   89] (poll)
+[   ] poll @ 3.696355s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   90] (poll)
+[   ] poll @ 3.697355s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   91] (poll)
+[   ] poll @ 3.698356s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   92] (poll)
+[   ] poll @ 3.699356s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   93] (poll)
+[   ] poll @ 3.700357s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   94] (poll)
+[   ] poll @ 3.701357s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   95] (poll)
+[   ] poll @ 3.702357s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   96] (poll)
+[   ] poll @ 3.703357s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   97] (poll)
+[   ] poll @ 3.704358s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   98] (poll)
+[   ] poll @ 3.705358s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[   99] (poll)
+[   ] poll @ 3.706358s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  100] (poll)
+[   ] poll @ 3.707358s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  101] (poll)
+[   ] poll @ 3.708359s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  102] (poll)
+[   ] poll @ 3.709359s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  103] (poll)
+[   ] poll @ 3.710359s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  104] (poll)
+[   ] poll @ 3.711360s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  105] (poll)
+[   ] poll @ 3.712360s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  106] (poll)
+[   ] poll @ 3.713360s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  107] (poll)
+[   ] poll @ 3.714361s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  108] (poll)
+[   ] poll @ 3.715361s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  109] (poll)
+[   ] poll @ 3.716361s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  110] (poll)
+[   ] poll @ 3.717361s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  111] (poll)
+[   ] poll @ 3.718362s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  112] (poll)
+[   ] poll @ 3.719362s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  113] (poll)
+[   ] poll @ 3.720363s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  114] (poll)
+[   ] poll @ 3.721363s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  115] (poll)
+[   ] poll @ 3.722363s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  116] (poll)
+[   ] poll @ 3.723363s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  117] (poll)
+[   ] poll @ 3.724364s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  118] (poll)
+[   ] poll @ 3.725364s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  119] (poll)
+[   ] poll @ 3.726364s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  120] (poll)
+[   ] poll @ 3.727364s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  121] (poll)
+[   ] poll @ 3.728365s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  122] (poll)
+[   ] poll @ 3.729365s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  123] (poll)
+[   ] poll @ 3.730365s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  124] (poll)
+[   ] poll @ 3.731366s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  125] (poll)
+[   ] poll @ 3.732366s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  126] (poll)
+[   ] poll @ 3.733366s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  127] (poll)
+[   ] poll @ 3.734367s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  128] (poll)
+[   ] poll @ 3.735367s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  129] (poll)
+[   ] poll @ 3.736367s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  130] (poll)
+[   ] poll @ 3.737367s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  131] (poll)
+[   ] poll @ 3.738368s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  132] (poll)
+[   ] poll @ 3.739368s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  133] (poll)
+[   ] poll @ 3.740368s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  134] (poll)
+[   ] poll @ 3.741368s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  135] (poll)
+[   ] poll @ 3.742369s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  136] (poll)
+[   ] poll @ 3.743369s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  137] (poll)
+[   ] poll @ 3.744369s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  138] (poll)
+[   ] poll @ 3.745370s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  139] (poll)
+[   ] poll @ 3.746370s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  140] (poll)
+[   ] poll @ 3.747370s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  141] (poll)
+[   ] poll @ 3.748371s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  142] (poll)
+[   ] poll @ 3.749371s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  143] (poll)
+[   ] poll @ 3.750371s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  144] (poll)
+[   ] poll @ 3.751371s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  145] (poll)
+[   ] poll @ 3.752372s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  146] (poll)
+[   ] poll @ 3.753372s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  147] (poll)
+[   ] poll @ 3.754373s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  148] (poll)
+[   ] poll @ 3.755373s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  149] (poll)
+[   ] poll @ 3.756373s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  150] (poll)
+[   ] poll @ 3.757373s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  151] (poll)
+[   ] poll @ 3.758374s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  152] (poll)
+[   ] poll @ 3.759374s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  153] (poll)
+[   ] poll @ 3.760374s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  154] (poll)
+[   ] poll @ 3.761374s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  155] (poll)
+[   ] poll @ 3.762375s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  156] (poll)
+[   ] poll @ 3.763375s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  157] (poll)
+[   ] poll @ 3.764375s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  158] (poll)
+[   ] poll @ 3.765376s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  159] (poll)
+[   ] poll @ 3.766376s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  160] (poll)
+[   ] poll @ 3.767376s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  161] (poll)
+[   ] poll @ 3.768377s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  162] (poll)
+[   ] poll @ 3.769377s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  163] (poll)
+[   ] poll @ 3.770380s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  164] (poll)
+[   ] poll @ 3.771380s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  165] (poll)
+[   ] poll @ 3.772381s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  166] (poll)
+[   ] poll @ 3.773381s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  167] (poll)
+[   ] poll @ 3.774380s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  168] (poll)
+[   ] poll @ 3.775379s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  169] (poll)
+[   ] poll @ 3.776379s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  170] (poll)
+[   ] poll @ 3.777379s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  171] (poll)
+[   ] poll @ 3.778380s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  172] (poll)
+[   ] poll @ 3.779380s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  173] (poll)
+[   ] poll @ 3.780380s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  174] (poll)
+[   ] poll @ 3.781381s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  175] (poll)
+[   ] poll @ 3.782381s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  176] (poll)
+[   ] poll @ 3.783381s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  177] (poll)
+[   ] poll @ 3.784381s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  178] (poll)
+[   ] poll @ 3.785382s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  179] (poll)
+[   ] poll @ 3.786382s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  180] (poll)
+[   ] poll @ 3.787382s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  181] (poll)
+[   ] poll @ 3.788383s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  182] (poll)
+[   ] poll @ 3.789383s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  183] (poll)
+[   ] poll @ 3.790383s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  184] (poll)
+[   ] poll @ 3.791384s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  185] (poll)
+[   ] poll @ 3.792384s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  186] (poll)
+[   ] poll @ 3.793384s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  187] (poll)
+[   ] poll @ 3.794384s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  188] (poll)
+[   ] poll @ 3.795385s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  189] (poll)
+[   ] poll @ 3.796385s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  190] (poll)
+[   ] poll @ 3.797385s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  191] (poll)
+[   ] poll @ 3.798386s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  192] (poll)
+[   ] poll @ 3.799386s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  193] (poll)
+[   ] poll @ 3.800386s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  194] (poll)
+[   ] poll @ 3.801386s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  195] (poll)
+[   ] poll @ 3.802387s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  196] (poll)
+[   ] poll @ 3.803387s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  197] (poll)
+[   ] poll @ 3.804387s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  198] (poll)
+[   ] poll @ 3.805388s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  199] (poll)
+[   ] poll @ 3.806388s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  200] (poll)
+[   ] poll @ 3.807388s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  201] (poll)
+[   ] poll @ 3.808388s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  202] (poll)
+[   ] poll @ 3.809389s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  203] (poll)
+[   ] poll @ 3.810389s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  204] (poll)
+[   ] poll @ 3.811389s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  205] (poll)
+[   ] poll @ 3.812390s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  206] (poll)
+[   ] poll @ 3.813390s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  207] (poll)
+[   ] poll @ 3.814390s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  208] (poll)
+[   ] poll @ 3.815391s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  209] (poll)
+[   ] poll @ 3.816391s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  210] (poll)
+[   ] poll @ 3.817391s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  211] (poll)
+[   ] poll @ 3.818391s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  212] (poll)
+[   ] poll @ 3.819392s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  213] (poll)
+[   ] poll @ 3.820392s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  214] (poll)
+[   ] poll @ 3.821392s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  215] (poll)
+[   ] poll @ 3.822392s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  216] (poll)
+[   ] poll @ 3.823393s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  217] (poll)
+[   ] poll @ 3.824393s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  218] (poll)
+[   ] poll @ 3.825393s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  219] (poll)
+[   ] poll @ 3.826394s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+tx[  220] (poll)
+[   ] poll @ 3.827394s  status=0x92  Δx=   +0  Δy=   +0   (raw MISO=0392000000)
+
+; summary: 8764 polls total (0 with motion, 8764 idle), 8564 skipped in output

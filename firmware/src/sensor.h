@@ -3,7 +3,7 @@
 #include <stdint.h>
 
 /* "1855" optical sensor driver — SPI mode 3, soft CS.
-   Vendor not publicly identified; protocol is PixArt-family. */
+   Logitech in-house (likely Mercury family); protocol is PixArt-family. */
 
 void sensor_init(void);
 

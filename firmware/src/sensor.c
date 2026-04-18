@@ -1,7 +1,8 @@
 /*
- * "1855" optical sensor driver (vendor not publicly identified; chip silk
- * reads `1855 Rev 007`). Protocol is PixArt-family (SROM 2E/2F upload,
- * 0x02 commit) but the part is not a documented PAW-series PixArt.
+ * "1855" optical sensor driver. Chip silk reads `1855 Rev 007`; Logitech
+ * in-house, likely a revision of the Mercury family (see docs/SENSOR_1855.md
+ * for the evidence). Protocol is PixArt-family in shape (SROM 2E/2F upload,
+ * 0x02 commit, CS-framed) but the part is not a documented PixArt PMW/PAW.
  *
  * Wiring (traced on the G102 PCB):
  *   SPI1 SCK   PB3 (AF0)

@@ -38,8 +38,10 @@
 #define BTN_MACRO2_PIN      GPIO6
 
 // "1855" optical sensor SPI — CS is a plain GPIO (soft chip-select).
-// Vendor not publicly identified; silk reads `1855 Rev 007`. Protocol is
-// PixArt-family (SROM 2E/2F upload, 0x02 commit) but not a documented PAW part.
+// Silk reads `1855 Rev 007`. Logitech in-house sensor, likely a revision of
+// the "Mercury" family (see docs/SENSOR_1855.md). Protocol is PixArt-family
+// in shape (SROM 2E/2F upload, 0x02 commit) but the part is not a documented
+// PixArt PMW/PAW and no PixArt attribution has been verified.
 // Active-low, idle-high. Frame every transaction.
 #define SENSOR_CS_PORT      GPIOA
 #define SENSOR_CS_PIN       GPIO15
