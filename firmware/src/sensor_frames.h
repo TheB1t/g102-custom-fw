@@ -1,5 +1,18 @@
 #pragma once
 
+/*
+ * Init-sequence replay blob for the "1855" optical sensor.
+ *
+ * Captured from the stock Logitech firmware's SPI bus using a logic
+ * analyzer — this is a transcription of the wire protocol observed at
+ * power-on, not an extract from any decompiled binary. Reproduced for
+ * interoperability only; see README "Legal" section.
+ *
+ * Each FRAMEn array is one CS-framed SPI transaction. The driver in
+ * sensor_1855.cpp replays them in order, twice, with a 166 ms gap —
+ * matching the stock sequence byte-for-byte.
+ */
+
 #include <stdint.h>
 
 static const uint8_t FRAME0[2] = {
