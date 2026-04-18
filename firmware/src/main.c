@@ -13,6 +13,7 @@
 #include "board.h"
 #include "hid.h"
 #include "inputs.h"
+#include "sensor.h"
 
 #define DPI_HOLD_POLLS  500u    // roughly 0.5 s at ~1 ms HID poll
 
@@ -30,11 +31,11 @@ int main(void)
     rcc_clock_setup_in_hsi48_out_48mhz();
 
     inputs_init();
+    sensor_init();
     usb_hid_init();
 
     uint16_t dpi_held = 0;
     uint8_t  last_buttons = 0xFF;
-    int8_t   last_wheel = 0;
 
     while (1) {
         usb_hid_poll();
@@ -42,15 +43,19 @@ int main(void)
 
         uint8_t buttons = inputs_buttons();
         int8_t  wheel   = inputs_wheel_consume();
+        int8_t  sx = 0, sy = 0;
+        sensor_read_motion(&sx, &sy);
+        // Sensor chip is rotated 90° on the G102 PCB: its X axis is the
+        // mouse's forward/back, its Y axis is left/right. Remap to HID.
+        int8_t  dx = sy;
+        int8_t  dy = -sx;
 
-        // Only transmit when something changed — avoids flooding the bus
-        // and lets the interrupt endpoint stay idle when the mouse is still.
-        if (buttons != last_buttons || wheel != 0) {
-            usb_hid_send_report(buttons, 0, 0, wheel);
+        // Transmit when anything is non-zero or buttons changed. Otherwise
+        // stay silent — keeps the bus quiet and avoids spamming the host.
+        if (buttons != last_buttons || wheel != 0 || dx != 0 || dy != 0) {
+            usb_hid_send_report(buttons, dx, dy, wheel);
             last_buttons = buttons;
-            last_wheel = wheel;
         }
-        (void)last_wheel;
 
         if (!gpio_get(BTN_DPI_PORT, BTN_DPI_PIN)) {
             if (++dpi_held > DPI_HOLD_POLLS) reboot_to_bootloader();
