@@ -1,5 +1,4 @@
-#ifndef G102_BOARD_H
-#define G102_BOARD_H
+#pragma once
 
 /*
  * C-compatible subset of board.hpp for the bootloader (which stays in C).
@@ -36,5 +35,3 @@
 #define FLASH_BOOTLOADER_BASE   0x08000000u
 #define FLASH_FIRMWARE_BASE     0x08004000u
 #define FLASH_FIRMWARE_END      0x08020000u
-
-#endif

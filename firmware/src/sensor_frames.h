@@ -1,3 +1,7 @@
+#pragma once
+
+#include <stdint.h>
+
 static const uint8_t FRAME0[2] = {
     0x02, 0x08,
 };

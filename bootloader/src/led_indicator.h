@@ -1,5 +1,4 @@
-#ifndef G102_LED_INDICATOR_H
-#define G102_LED_INDICATOR_H
+#pragma once
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -14,5 +13,3 @@ void led_indicator_init(void);
 
 /* Drive the cycling PWM — call as often as possible from the main loop. */
 void led_indicator_tick(void);
-
-#endif
