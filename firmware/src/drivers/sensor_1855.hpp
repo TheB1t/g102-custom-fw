@@ -27,9 +27,17 @@ class Sensor1855 {
 public:
     explicit Sensor1855(Spi &spi) : spi_(spi) {}
 
-    /* Bring up pins, clock the bus, run the 10-frame init twice (per stock
-       capture), and clamp DPI to a sane startup value. Call once from main. */
-    void init();
+    /* Bring up pins + clock the SPI bus. Non-blocking: the actual init
+       sequence (Vcc settle, two replay passes, 166 ms gap, DPI clamp) is
+       driven by init_tick(now_ms) from the main loop, so usbd_poll() can
+       keep running during the ~280 ms bringup. */
+    void init_start();
+
+    /* Advance the bringup state machine. Safe to call every loop iteration
+       even after the sensor is ready — returns immediately once done. */
+    void init_tick(uint32_t now_ms);
+
+    bool ready() const { return state_ == InitState::Ready; }
 
     /* Read motion burst. Returns true if new motion was latched since the
        last call (and writes dx/dy); false otherwise (dx/dy set to 0).
@@ -45,8 +53,23 @@ public:
     void set_dpi(uint8_t code);
 
 private:
+    enum class InitState : uint8_t {
+        Idle,        // init_start() not yet called
+        WaitVcc,     // 100 ms Vcc settle
+        Pass1,       // replay frames 0..9
+        WaitGap,     // 166 ms between passes
+        Pass2,       // replay frames 0..9 again
+        SetDpi,      // clamp DPI to a sane startup value
+        Ready,
+    };
+
     static constexpr uint32_t kMotionLen = 5;
-    Spi &spi_;
+    static constexpr uint32_t kVccSettleMs = 100;
+    static constexpr uint32_t kPassGapMs   = 166;
+
+    Spi       &spi_;
+    InitState  state_      = InitState::Idle;
+    uint32_t   state_started_ms_ = 0;
 };
 
 } // namespace drivers

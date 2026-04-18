@@ -5,6 +5,7 @@
 #include "board.hpp"
 #include "platform/gpio.hpp"
 #include "platform/spi.hpp"
+#include "platform/systick.hpp"
 #include "drivers/sensor_1855.hpp"
 #include "sensor_frames.h"
 
@@ -24,16 +25,10 @@ constexpr uint32_t kFrameSizes[10] = {
     sizeof(FRAME5), sizeof(FRAME6), sizeof(FRAME7), sizeof(FRAME8), sizeof(FRAME9),
 };
 
-/* Milli-second busy-wait tuned for the 48 MHz HSI48 clock. */
-inline void delay_ms(uint32_t ms)
-{
-    for (volatile uint32_t t = 0; t < 48000u * ms; t++) __asm__ volatile ("nop");
-}
-
 } // namespace
 
 template <typename Board, typename Spi>
-void Sensor1855<Board, Spi>::init()
+void Sensor1855<Board, Spi>::init_start()
 {
     using namespace platform;
 
@@ -51,20 +46,49 @@ void Sensor1855<Board, Spi>::init()
 
     spi_.init_mode3_1p5mhz();
 
-    /* Sensor VCC must settle ≥ ~100 ms before the first SPI byte or the init
-       sequence silently corrupts. */
-    delay_ms(100);
+    state_            = InitState::WaitVcc;
+    state_started_ms_ = now_ms();
+}
 
-    /* Replay the stock init blob twice. */
-    for (int pass = 0; pass < 2; pass++) {
-        for (int i = 0; i < 10; i++) {
-            spi_.frame(kFrames[i], nullptr, kFrameSizes[i]);
-        }
-        if (pass == 0) delay_ms(166);
+template <typename Board, typename Spi>
+void Sensor1855<Board, Spi>::init_tick(uint32_t now)
+{
+    using namespace platform;
+
+    switch (state_) {
+    case InitState::Idle:
+    case InitState::Ready:
+        return;
+
+    case InitState::WaitVcc:
+        /* Sensor VCC must settle ≥ ~100 ms before the first SPI byte or
+           the init sequence silently corrupts. */
+        if ((now - state_started_ms_) < kVccSettleMs) return;
+        state_ = InitState::Pass1;
+        return;
+
+    case InitState::Pass1:
+        for (int i = 0; i < 10; i++) spi_.frame(kFrames[i], nullptr, kFrameSizes[i]);
+        state_            = InitState::WaitGap;
+        state_started_ms_ = now;
+        return;
+
+    case InitState::WaitGap:
+        if ((now - state_started_ms_) < kPassGapMs) return;
+        state_ = InitState::Pass2;
+        return;
+
+    case InitState::Pass2:
+        for (int i = 0; i < 10; i++) spi_.frame(kFrames[i], nullptr, kFrameSizes[i]);
+        state_ = InitState::SetDpi;
+        return;
+
+    case InitState::SetDpi:
+        /* Init blob leaves DPI fairly high; clamp to a moderate startup value. */
+        set_dpi(0x08);
+        state_ = InitState::Ready;
+        return;
     }
-
-    /* Init blob leaves DPI fairly high; clamp to a moderate startup value. */
-    set_dpi(0x08);
 }
 
 template <typename Board, typename Spi>

@@ -6,11 +6,14 @@
  * soft-resets into the DFU bootloader.
  */
 
+#include <cstring>
 #include <libopencm3/cm3/scb.h>
 #include <libopencm3/stm32/rcc.h>
+#include <libopencm3/stm32/syscfg.h>
 
 #include "board.hpp"
 #include "platform/spi.hpp"
+#include "platform/systick.hpp"
 #include "drivers/buttons.hpp"
 #include "drivers/encoder_quad.hpp"
 #include "drivers/sensor_1855.hpp"
@@ -18,7 +21,7 @@
 
 namespace {
 
-constexpr uint16_t DPI_HOLD_POLLS = 500u;
+constexpr uint32_t DPI_HOLD_MS = 500u;
 
 [[noreturn]] void reboot_to_bootloader()
 {
@@ -27,12 +30,29 @@ constexpr uint16_t DPI_HOLD_POLLS = 500u;
     __builtin_unreachable();
 }
 
+/* Cortex-M0 (STM32F0) has no writable VTOR — interrupts always dispatch
+   through 0x00000000, which is the bootloader's vector table. To get our
+   own handlers (SysTick, USB, etc.) we copy the firmware vector table
+   into SRAM and flip SYSCFG.MEM_MODE to remap SRAM at address 0. */
+__attribute__((section(".vectors_sram"), used))
+alignas(256) uint32_t g_vectors_sram[48];
+
+void remap_vectors_to_sram()
+{
+    std::memcpy(g_vectors_sram,
+                reinterpret_cast<const void *>(board::FLASH_FIRMWARE_BASE),
+                sizeof(g_vectors_sram));
+    rcc_periph_clock_enable(RCC_SYSCFG_COMP);
+    SYSCFG_CFGR1 = (SYSCFG_CFGR1 & ~SYSCFG_CFGR1_MEM_MODE) |
+                   SYSCFG_CFGR1_MEM_MODE_SRAM;
+}
+
 } // namespace
 
 int main()
 {
-    SCB_VTOR = board::FLASH_FIRMWARE_BASE;
     rcc_clock_setup_in_hsi48_out_48mhz();
+    remap_vectors_to_sram();
 
     using Board = board::G102;
     using SpiBus = platform::SoftCsSpiBus<Board::SensorCs>;
@@ -42,23 +62,34 @@ int main()
     drivers::QuadEncoder<Board> encoder;
     services::UsbHidMouse usb;
 
+    /* Bring USB up first and spin until the host has finished enumeration.
+       Anything that might block (soft-SPI sensor bringup, GPIO init) must
+       wait — a stalled usbd_poll during SETUP causes LANGID STALL and
+       kernel "string descriptor 0 read error -71". */
+    platform::systick_init();
+    usb.init();
+    while (!usb.configured()) usb.poll();
+
     drivers::Buttons<Board>::init();
     encoder.init();
-    sensor.init();
-    usb.init();
+    sensor.init_start();
 
-    uint16_t dpi_held = 0;
-    uint8_t  last_buttons = 0xFF;
+    uint32_t dpi_pressed_since = 0;
+    bool     dpi_was_pressed   = false;
+    uint8_t  last_buttons      = 0xFF;
 
     while (true) {
+        uint32_t now = platform::now_ms();
+
         usb.poll();
         encoder.poll();
+        sensor.init_tick(now);
 
         uint8_t buttons = drivers::Buttons<Board>::hid_bitmap();
         int8_t  wheel   = encoder.consume_ticks();
 
         int8_t sx = 0, sy = 0;
-        sensor.read_motion(sx, sy);
+        if (sensor.ready()) sensor.read_motion(sx, sy);
         /* Sensor chip is rotated 90° on the G102 PCB: its X is mouse
            forward/back, its Y is left/right. Remap to HID frame. */
         int8_t dx = sy;
@@ -69,10 +100,9 @@ int main()
             last_buttons = buttons;
         }
 
-        if (drivers::Buttons<Board>::dpi_pressed()) {
-            if (++dpi_held > DPI_HOLD_POLLS) reboot_to_bootloader();
-        } else {
-            dpi_held = 0;
-        }
+        bool dpi = drivers::Buttons<Board>::dpi_pressed();
+        if (dpi && !dpi_was_pressed) dpi_pressed_since = now;
+        if (dpi && (now - dpi_pressed_since) >= DPI_HOLD_MS) reboot_to_bootloader();
+        dpi_was_pressed = dpi;
     }
 }
