@@ -98,6 +98,8 @@ static uint8_t  dnload_buf[DFU_TRANSFER_SIZE];
 static uint16_t dnload_len;
 static uint16_t dnload_block;
 
+static volatile uint8_t reset_pending = 0;
+
 static void fail(enum dfu_status s)
 {
     dfu_status = s;
@@ -146,8 +148,11 @@ dfu_control_request(usbd_device *usbd_dev,
             dfu_state = STATE_DFU_MANIFEST;
         } else if (dfu_state == STATE_DFU_MANIFEST) {
             dfu_state = STATE_DFU_IDLE;
-            // WILL_DETACH is set, so host expects us to reset ourselves.
-            scb_reset_system();
+            // WILL_DETACH is set → reset ourselves, but only after this
+            // GET_STATUS response has been sent. Resetting inline here kills
+            // the USB bus before dfu-util sees our "IDLE" reply, which shows
+            // up as LIBUSB_ERROR_IO on the host side.
+            reset_pending = 1;
         }
 
         static uint8_t status[6];
@@ -208,5 +213,12 @@ void usb_dfu_run(void)
 
     while (1) {
         usbd_poll(usbd_dev);
+        if (reset_pending) {
+            // Let the GET_STATUS reply and any follow-up poll drain out of
+            // the FIFO before tearing down the bus. A short spin is enough —
+            // USB FS control transfers finish in microseconds.
+            for (volatile uint32_t i = 0; i < 200000; i++) { }
+            scb_reset_system();
+        }
     }
 }
