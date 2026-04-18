@@ -92,12 +92,13 @@ void Sensor1855<Board, Spi>::init_tick(uint32_t now)
 }
 
 template <typename Board, typename Spi>
-bool Sensor1855<Board, Spi>::read_motion(int8_t &dx, int8_t &dy)
+bool Sensor1855<Board, Spi>::read_motion(int16_t &dx, int16_t &dy)
 {
-    /* Motion burst. MISO returns [hdr, status, dxL, dyL, dxyH] — bit 7 of
-       status is motion-latched; dx/dy are low 8 bits of a signed 12-bit
-       count (high nibbles in dxyH). We clip to int8 for the boot-protocol
-       HID report. */
+    /* Motion burst. MISO returns [hdr, status, dxL, dyL, dxyH]:
+         status bit 7      — motion-latched flag
+         dxL, dxH (dxyH lo) — signed 12-bit X count
+         dyL, dyH (dxyH hi) — signed 12-bit Y count
+       The axis remap for the 90°-rotated chip lives in main. */
     static constexpr uint8_t req[kMotionLen] = { 0x80, 0x85, 0x86, 0x87, 0x80 };
     uint8_t resp[kMotionLen];
 
@@ -108,8 +109,21 @@ bool Sensor1855<Board, Spi>::read_motion(int8_t &dx, int8_t &dy)
         dy = 0;
         return false;
     }
-    dx = static_cast<int8_t>(resp[2]);
-    dy = static_cast<int8_t>(resp[3]);
+
+    /* 12-bit signed motion. Nibble mapping cross-referenced against the
+       stock-firmware SPI dump (captures/sensor_1855_dasm.py::decode_poll):
+         X hi nibble = (dxyH & 0xF0) >> 4   → bits 11..8 of X
+         Y hi nibble = (dxyH & 0x0F)        → bits 11..8 of Y
+       i.e. dxyH's UPPER nibble extends X, LOWER nibble extends Y — the
+       reverse of what I guessed originally. */
+    uint8_t dxL = resp[2], dyL = resp[3], dxyH = resp[4];
+    int16_t rx = static_cast<int16_t>((static_cast<uint16_t>(dxyH & 0xF0) << 4) | dxL);
+    int16_t ry = static_cast<int16_t>((static_cast<uint16_t>(dxyH & 0x0F) << 8) | dyL);
+    if (rx & 0x0800) rx |= static_cast<int16_t>(0xF000);
+    if (ry & 0x0800) ry |= static_cast<int16_t>(0xF000);
+
+    dx = rx;
+    dy = ry;
     return true;
 }
 

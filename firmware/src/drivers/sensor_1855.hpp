@@ -13,7 +13,7 @@
  * Usage:
  *   Sensor1855<board::G102, platform::SoftCsSpiBus<G102::SensorCs>> sensor{spi};
  *   sensor.init();
- *   int8_t dx, dy;
+ *   int16_t dx, dy;
  *   if (sensor.read_motion(dx, dy)) { ... }
  *   sensor.set_dpi(0x08);
  */
@@ -40,12 +40,13 @@ public:
     bool ready() const { return state_ == InitState::Ready; }
 
     /* Read motion burst. Returns true if new motion was latched since the
-       last call (and writes dx/dy); false otherwise (dx/dy set to 0).
+       last call (and writes dx/dy as signed 12-bit counts, sign-extended
+       to int16); false otherwise (dx/dy set to 0).
 
        The G102's sensor chip is rotated 90° in the chassis, but this driver
        returns raw sensor-frame dx/dy. The axis remap to HID coordinates
        lives in main, so the driver stays board-agnostic. */
-    bool read_motion(int8_t &dx, int8_t &dy);
+    bool read_motion(int16_t &dx, int16_t &dy);
 
     /* Mirror register 0x20 / 0x24 (X / Y resolution). Non-linear scale,
        see project memory / SENSOR_1855.md for the empirical mapping.
