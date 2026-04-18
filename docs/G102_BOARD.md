@@ -2,9 +2,10 @@
 
 > Pin assignments, connections, and layout for the Logitech G102 PCB as
 > traced by continuity on 2026-04-18. This is the hardware view that
-> underpins [`common/board.h`](../common/board.h). If the header and this
-> document disagree, the header is authoritative (it is what the firmware
-> actually reads) — but please fix whichever is wrong.
+> underpins [`common/board.hpp`](../common/board.hpp) (and the C shim
+> [`common/board.h`](../common/board.h) used by the bootloader). If the
+> headers and this document disagree, the headers are authoritative (that
+> is what the firmware actually reads) — but please fix whichever is wrong.
 
 ---
 
@@ -81,35 +82,35 @@ bootloader updates go over ST-Link only.
 ```
   PA0  ─  (unused / reserved)
   PA1  ─  (unused / reserved)
-  PA2  ─  (unused / reserved)
-  PA3  ─  (unused / reserved on this PCB)
-  PA4  ─  (unused / reserved on this PCB)
-  PA5  ─  (unused / reserved on this PCB)
-  PA6  ─  (unused / reserved on this PCB)
-  PA7  ─  (unused / reserved on this PCB)
+  PA2  ●  LED1_B       RGB LED 1, blue  channel (high-side anode, low-side switched cathode, HIGH = lit)
+  PA3  ●  LED2_G       RGB LED 2, green channel
+  PA4  ●  LED2_B       RGB LED 2, blue  channel
+  PA5  ─  (unused / reserved)
+  PA6  ●  LED2_R       RGB LED 2, red   channel
+  PA7  ●  LED3_R       RGB LED 3, red   channel
   PA8  ●  ENC_A        scroll-wheel encoder, quadrature channel A
   PA9  ●  ENC_B        scroll-wheel encoder, quadrature channel B
   PA10 ─  (unused / reserved)
   PA11 ●  USB D-       USB full-speed
   PA12 ●  USB D+       USB full-speed
-  PA13 ●  SWDIO        SWD debug
-  PA14 ●  SWCLK        SWD debug
+  PA13 ●  SWDIO        SWD debug (exposed on TP2)
+  PA14 ●  SWCLK        SWD debug (exposed on TP3)
   PA15 ●  SENSOR_CS    sensor soft CS, active-LOW, idle-HIGH
 ```
 
 ### 3.2 GPIOB
 
 ```
-  PB0  ─  (unused / reserved)
-  PB1  ─  (unused / reserved)
+  PB0  ●  LED3_B       RGB LED 3, blue  channel
+  PB1  ●  LED3_G       RGB LED 3, green channel
   PB2  ─  (unused / reserved)
   PB3  ●  SPI1_SCK     AF0 → sensor SCK
   PB4  ●  SPI1_MISO    AF0 → sensor MISO
   PB5  ●  SPI1_MOSI    AF0 → sensor MOSI
-  PB6  ●  BTN_MACRO2   side button (thumb, back)
-  PB7  ●  BTN_MACRO1   side button (thumb, forward)
-  PB8  ─  (unused / reserved)
-  PB9  ─  (unused / reserved)
+  PB6  ●  BTN_MACRO2   upper side button (thumb, FORWARD)
+  PB7  ●  BTN_MACRO1   lower side button (thumb, BACK)
+  PB8  ●  LED1_G       RGB LED 1, green channel
+  PB9  ●  LED1_R       RGB LED 1, red   channel
   PB10 ─  (unused / reserved)
   PB11 ─  (unused / reserved)
   PB12 ●  BTN_RMB      right mouse button
@@ -119,6 +120,12 @@ bootloader updates go over ST-Link only.
 ```
 
 All button inputs are active-LOW with MCU-internal pull-ups enabled.
+
+Side-button naming is a historical quirk: `BtnMacro1` (PB7) is the
+lower/rear button and maps to HID `BTN_BACK`; `BtnMacro2` (PB6) is the
+upper/front button and maps to HID `BTN_FORWARD`. Physical verification
+was done via the bootloader's "forward-button boots firmware" shortcut,
+so the correspondence is confirmed on hardware.
 
 ### 3.3 Alternate-function summary
 
@@ -147,13 +154,14 @@ away from you):
                          │      ╔═══════════╗             │
              ┌───────────┼──────╣  LMB  RMB ╠───────────┐ │
              │           │      ║   ┌───┐   ║           │ │
-             │   MACRO1  │      ║   │ W │   ║           │ │
+             │   MACRO2  │      ║   │ W │   ║           │ │
              │  (thumb   │      ║   │hee│   ║           │ │
-             │  forward) │      ║   │ l │   ║           │ │
-             │           │      ║   └───┘   ║           │ │
-             │   MACRO2  │      ║           ║           │ │
+             │  forward  │      ║   │ l │   ║           │ │
+             │   / PB6)  │      ║   └───┘   ║           │ │
+             │   MACRO1  │      ║           ║           │ │
              │  (thumb   │      ║    DPI    ║           │ │
-             │  back)    │      ║   button  ║           │ │
+             │  back     │      ║   button  ║           │ │
+             │   / PB7)  │      ║           ║           │ │
              │           │      ╠═══════════╣           │ │
              │           │      ║           ║           │ │
              │           │      ║   "1855"  ║           │ │
@@ -279,18 +287,57 @@ with a busy-loop before `run_init_sequence()`.
 ## 8. Debug access
 
 ```
-  SWDIO = PA13
-  SWCLK = PA14
-  GND   = any ground pad
-  3V3   = (optional) present on the programming header; safe to power from
-          ST-Link in parallel with USB if you're careful about ground loops,
-          but the safer move is USB-power only and SWD for signals.
+  SWDIO = PA13   → exposed on test point TP2
+  SWCLK = PA14   → exposed on test point TP3
+  NRST           → exposed on test point TP4
+  GND   = any ground pad / USB shield — MUST be tied to ST-Link GND even
+                   when not sharing 3V3; SWD signals need a common reference
+  3V3   = DO NOT source from the ST-Link; power the board from USB. Sourcing
+                   3V3 from two supplies makes ground loops that upset SWD on
+                   some clone probes.
 ```
 
-The PCB has unpopulated pads for an SWD header near the MCU. All firmware
-on this project has so far been flashed through one of:
+There is no populated SWD header; those three pads (TP2/TP3/TP4) are all
+you get.
 
-- **ST-Link → SWD**, for the bootloader and initial firmware.
+### 8.1 BOOT0
+
+`BOOT0` is tied to ground through **R20**. With BOOT0 low the MCU boots
+from main flash — which means at reset the stock firmware runs and SWD
+can't get a clean halt on a locked part. To enter the STM32 system-memory
+bootloader (where the MCU halts before running any code), tie BOOT0 to
+3V3 through a wire — a 1–10 kΩ resistor is safer than a direct short.
+
+**Keep BOOT0 high for the entire SWD session.** Dropping it mid-session
+exits system-memory bootloader mode and SWD loses the target.
+
+### 8.2 RDP / WRP — one-way unlock
+
+The stock firmware ships with **RDP Level 1** and write-protection on the
+first flash pages. You cannot read back, dump, or selectively rewrite the
+stock firmware — the only path forward is to unlock, which triggers a
+**hardware mass-erase**. Once unlocked, the original Logitech firmware is
+gone for good; there is no backup path. Proceed only if you intend to run
+custom firmware from now on.
+
+Sequence with `openocd` (driving an ST-Link through SWD):
+
+```
+  1. BOOT0 = 3V3, USB plugged in.
+  2. stm32f0x unlock 0           → drops RDP to Level 0, mass-erases flash.
+  3. flash protect 0 0 15 off    → clears the 16 WRP blocks that stick
+                                    even after RDP=0 on some parts.
+  4. program <bootloader>.elf verify reset
+  5. Unplug USB; release BOOT0; replug. Bootloader is live.
+```
+
+After the bootloader is in place, the rest of the work happens over
+USB DFU — you only need SWD again if you want to change the bootloader
+itself.
+
+### 8.3 Flash paths used
+
+- **ST-Link → SWD**, for the bootloader (one-off per board).
 - **DFU-over-USB**, for iterative firmware updates once the bootloader is
   alive. Flash the bootloader once, then never again (barring changes to
   the bootloader itself).
@@ -299,11 +346,17 @@ on this project has so far been flashed through one of:
 
 ## 9. Cross-references
 
-- Firmware entry / main loop: [`firmware/src/main.c`](../firmware/src/main.c)
-- Sensor driver: [`firmware/src/sensor.c`](../firmware/src/sensor.c),
+- Firmware entry / main loop: [`firmware/src/app/main.cpp`](../firmware/src/app/main.cpp)
+- Sensor driver: [`firmware/src/drivers/sensor_1855.cpp`](../firmware/src/drivers/sensor_1855.cpp),
+  [`firmware/src/drivers/sensor_1855.hpp`](../firmware/src/drivers/sensor_1855.hpp),
   [`firmware/src/sensor_frames.h`](../firmware/src/sensor_frames.h)
-- Inputs (buttons + encoder): [`firmware/src/inputs.c`](../firmware/src/inputs.c)
-- USB HID: [`firmware/src/usb_hid.c`](../firmware/src/usb_hid.c)
-- Bootloader + DFU: [`bootloader/src/usb_dfu.c`](../bootloader/src/usb_dfu.c)
-- Pin header (authoritative): [`common/board.h`](../common/board.h)
+- Buttons: [`firmware/src/drivers/buttons.hpp`](../firmware/src/drivers/buttons.hpp)
+- Scroll encoder: [`firmware/src/drivers/encoder_quad.hpp`](../firmware/src/drivers/encoder_quad.hpp)
+- RGB lighting: [`firmware/src/drivers/lighting.hpp`](../firmware/src/drivers/lighting.hpp),
+  [`firmware/src/drivers/lighting.cpp`](../firmware/src/drivers/lighting.cpp)
+- USB HID: [`firmware/src/services/usb_hid.cpp`](../firmware/src/services/usb_hid.cpp)
+- Bootloader + DFU: [`bootloader/src/usb_dfu.c`](../bootloader/src/usb_dfu.c),
+  [`bootloader/src/led_indicator.c`](../bootloader/src/led_indicator.c)
+- Pin headers (authoritative): [`common/board.hpp`](../common/board.hpp)
+  (firmware), [`common/board.h`](../common/board.h) (bootloader C shim)
 - Sensor protocol / registers: [`docs/SENSOR_1855.md`](SENSOR_1855.md)
