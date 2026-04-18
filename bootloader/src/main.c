@@ -15,6 +15,7 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include "board.h"
+#include "led_indicator.h"
 
 void usb_dfu_run(void);
 
@@ -75,6 +76,7 @@ int main(void)
     // USB on STM32F072 needs 48 MHz. HSI48 is perfect — no crystal required.
     rcc_clock_setup_in_hsi48_out_48mhz();
     rcc_periph_clock_enable(RCC_GPIOA);
+    led_indicator_init();
 
     usb_dfu_run();   // never returns; exits via system reset after download
 

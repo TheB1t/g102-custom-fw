@@ -17,6 +17,8 @@
 #include <libopencm3/usb/dfu.h>
 #include "board.h"
 #include "flash.h"
+#include "led_indicator.h"
+
 
 #define DFU_TRANSFER_SIZE   2048   // one F072 flash page
 
@@ -211,8 +213,22 @@ void usb_dfu_run(void)
 
     usbd_register_set_config_callback(usbd_dev, set_config);
 
+    /* Forward side-macro is the "boot firmware" shortcut: it's never the
+       key the user holds at power-on (DPI is), so we don't need any
+       armed-on-entry hack — plain press→release edge detection works. */
+    gpio_mode_setup(BTN_FWD_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, BTN_FWD_PIN);
+    int fwd_was_pressed = 0;
+    int armed           = 0;
+
     while (1) {
         usbd_poll(usbd_dev);
+        led_indicator_tick();
+
+        int fwd = gpio_get(BTN_FWD_PORT, BTN_FWD_PIN) == 0;
+        if (fwd && !fwd_was_pressed)  armed = 1;
+        if (!fwd && fwd_was_pressed && armed) scb_reset_system();
+        fwd_was_pressed = fwd;
+
         if (reset_pending) {
             // Let the GET_STATUS reply and any follow-up poll drain out of
             // the FIFO before tearing down the bus. A short spin is enough —
