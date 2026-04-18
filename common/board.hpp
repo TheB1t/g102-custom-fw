@@ -49,6 +49,19 @@ struct G102 {
     using SensorMiso = platform::Pin<GPIOB, GPIO4>;   // SPI1 MISO (AF0)
     using SensorMosi = platform::Pin<GPIOB, GPIO5>;   // SPI1 MOSI (AF0)
     static constexpr uint8_t SensorSpiAf = GPIO_AF0;
+
+    /* RGB lighting: 3 LEDs left-to-right (as held normally), common anode
+       tied to +5V; each cathode pulled to GND through a low-side driver
+       whose base/gate is controlled by the MCU pin. Drive HIGH = lit. */
+    using Led1R = platform::Pin<GPIOB, GPIO9>;
+    using Led1G = platform::Pin<GPIOB, GPIO8>;
+    using Led1B = platform::Pin<GPIOA, GPIO2>;
+    using Led2R = platform::Pin<GPIOA, GPIO6>;
+    using Led2G = platform::Pin<GPIOA, GPIO3>;
+    using Led2B = platform::Pin<GPIOA, GPIO4>;
+    using Led3R = platform::Pin<GPIOA, GPIO7>;
+    using Led3G = platform::Pin<GPIOB, GPIO1>;
+    using Led3B = platform::Pin<GPIOB, GPIO0>;
 };
 
 } // namespace board

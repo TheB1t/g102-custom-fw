@@ -16,6 +16,7 @@
 #include "platform/systick.hpp"
 #include "drivers/buttons.hpp"
 #include "drivers/encoder_quad.hpp"
+#include "drivers/lighting.hpp"
 #include "drivers/sensor_1855.hpp"
 #include "services/usb_hid.hpp"
 
@@ -60,6 +61,7 @@ int main()
     SpiBus spi{SPI1};
     drivers::Sensor1855<Board, SpiBus> sensor{spi};
     drivers::QuadEncoder<Board> encoder;
+    drivers::Lighting<Board> lighting;
     services::UsbHidMouse usb;
 
     /* Bring USB up first and spin until the host has finished enumeration.
@@ -72,6 +74,10 @@ int main()
 
     drivers::Buttons<Board>::init();
     encoder.init();
+    lighting.init();
+    lighting.set_base(1, 0xFF, 0x00, 0x00);
+    lighting.set_base(2, 0x00, 0xFF, 0x00);
+    lighting.set_base(3, 0x00, 0x00, 0xFF);
     sensor.init_start();
 
     uint32_t dpi_pressed_since = 0;
@@ -84,6 +90,7 @@ int main()
         usb.poll();
         encoder.poll();
         sensor.init_tick(now);
+        lighting.tick(now);
 
         uint8_t buttons = drivers::Buttons<Board>::hid_bitmap();
         int8_t  wheel   = encoder.consume_ticks();
