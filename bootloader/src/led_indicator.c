@@ -21,11 +21,19 @@ void sys_tick_handler(void)
     tick_ms++;
 }
 
-/* PWM period in ms. 4 ms @ 1/4 duty = 1 ms on, 3 ms off → ~250 Hz,
-   well above flicker threshold. */
-#define PWM_PERIOD_MS   4u
-#define PWM_ON_MS       1u
-#define LED_ON_MS       500u
+/* Software PWM off the SysTick downcounter: SysTick reloads at 48000
+   every 1 ms, so SYST->VAL gives us a sub-millisecond phase for free
+   without touching the tick rate the rest of the bootloader depends on.
+   Period = 48000 CPU cycles = 1 ms → ~1 kHz PWM, above flicker threshold.
+
+   Duty is in [0..SYSTICK_RELOAD]; MAX_DUTY caps brightness at ~1/4 to
+   match the old indicator feel.
+
+   Crossfade: every FADE_MS a pair of LEDs hands off — the outgoing LED
+   ramps MAX_DUTY → 0, the incoming one ramps 0 → MAX_DUTY in lockstep. */
+#define SYSTICK_RELOAD  48000u
+#define MAX_DUTY        (SYSTICK_RELOAD / 4u)
+#define FADE_MS         800u
 
 static const uint32_t led_ports[3] = {LED1_PORT, LED2_PORT, LED3_PORT};
 static const uint16_t led_pins[3]  = {LED1_PIN,  LED2_PIN,  LED3_PIN};
@@ -43,7 +51,7 @@ void led_indicator_init(void)
 
     /* 1 kHz SysTick — 48 MHz / 48000 = 1 ms. */
     systick_set_clocksource(STK_CSR_CLKSOURCE_AHB);
-    systick_set_reload(48000 - 1);
+    systick_set_reload(SYSTICK_RELOAD - 1);
     systick_clear();
     systick_interrupt_enable();
     systick_counter_enable();
@@ -51,13 +59,25 @@ void led_indicator_init(void)
 
 void led_indicator_tick(void)
 {
-    uint32_t now    = tick_ms;
-    uint8_t  active = (now / LED_ON_MS) % 3u;
-    uint32_t phase  = now % PWM_PERIOD_MS;
-    bool     on     = phase < PWM_ON_MS;
+    uint32_t now      = tick_ms;
+    uint32_t fade_pos = now % FADE_MS;          /* 0..FADE_MS-1 within hand-off */
+    uint8_t  outgoing = (now / FADE_MS) % 3u;
+    uint8_t  incoming = (outgoing + 1u) % 3u;
+
+    /* Linear ramp — cheap and good enough visually. Swap to sine-LUT if
+       we ever care about perceptual linearity. */
+    uint32_t duty_in  = (MAX_DUTY * fade_pos) / FADE_MS;
+    uint32_t duty_out = MAX_DUTY - duty_in;
+
+    /* SysTick is a downcounter: VAL decrements from RELOAD-1 to 0 and
+       reloads. Convert to an upcounting phase for the compare. */
+    uint32_t phase = (SYSTICK_RELOAD - 1u) - systick_get_value();
 
     for (int i = 0; i < 3; i++) {
-        if (i == active && on) gpio_set(led_ports[i], led_pins[i]);
-        else                    gpio_clear(led_ports[i], led_pins[i]);
+        uint32_t duty = (i == outgoing) ? duty_out
+                      : (i == incoming) ? duty_in
+                      : 0u;
+        if (phase < duty) gpio_set(led_ports[i], led_pins[i]);
+        else              gpio_clear(led_ports[i], led_pins[i]);
     }
 }
