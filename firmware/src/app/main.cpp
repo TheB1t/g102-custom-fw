@@ -22,11 +22,16 @@
 
 namespace {
 
-constexpr uint32_t DPI_HOLD_MS = 500u;
+constexpr uint32_t DPI_HOLD_MS = 3000u;
 
 [[noreturn]] void reboot_to_bootloader()
 {
+    /* Set the handoff flag so the bootloader stays in DFU regardless of
+       pin state at reset. Still wait for the user to release DPI first —
+       otherwise the bootloader's physical-override check also latches
+       true and we'd need two independent release/press cycles to escape. */
     board::boot_magic_slot() = board::BOOT_MAGIC;
+    while (drivers::Buttons<board::G102>::dpi_pressed()) { }
     scb_reset_system();
     __builtin_unreachable();
 }
